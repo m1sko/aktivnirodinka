@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blog | Aktivní Rodinka – Tipy pro aktivní rodiče</title>
+  <meta name="description" content="Průvodci, tipy na výlety a rady pro aktivní rodiče. Vše o sportování s dětmi, výletech ve Zlínském kraji a dětských vozících." />
+  <link rel="canonical" href="https://www.aktivnirodinka.cz/blog" />
+  <link rel="icon" type="image/x-icon" href="../favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --green-dark: #1B4332; --green-mid: #2D6A4F; --green-pale: #D8F3DC; --green-bg: #F0F7F4; --cream: #F9FAF8; --white: #FFFFFF; --text-dark: #1A1A1A; --text-muted: #6B7280; --border: #E5E7EB; --radius: 12px; --shadow-sm: 0 2px 8px rgba(0,0,0,0.06); --shadow-md: 0 4px 16px rgba(0,0,0,0.10); }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text-dark); background: var(--white); line-height: 1.6; }
+    a { text-decoration: none; color: inherit; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    .btn { display: inline-flex; align-items: center; padding: 10px 22px; border-radius: 50px; font-weight: 700; font-size: 14px; border: none; transition: all .2s; cursor: pointer; }
+    .btn-primary { background: var(--green-dark); color: var(--white); }
+    .btn-primary:hover { background: var(--green-mid); }
+    .navbar { position: sticky; top: 0; z-index: 100; background: var(--white); border-bottom: 1px solid var(--border); padding: 14px 0; }
+    .navbar-inner { display: flex; align-items: center; justify-content: space-between; }
+    .navbar-logo { font-weight: 800; font-size: 17px; color: var(--green-dark); }
+    .hero { background: var(--cream); padding: 56px 0; }
+    .hero h1 { font-size: clamp(28px, 4vw, 42px); font-weight: 800; color: var(--green-dark); margin-bottom: 12px; }
+    .hero p { font-size: 17px; color: var(--text-muted); max-width: 560px; }
+    .posts { padding: 64px 0; }
+    .posts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .post-card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; transition: all .2s; display: flex; flex-direction: column; }
+    .post-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+    .post-card-body { padding: 24px; flex: 1; display: flex; flex-direction: column; }
+    .post-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--green-mid); margin-bottom: 8px; }
+    .post-card h2 { font-size: 17px; font-weight: 700; color: var(--green-dark); line-height: 1.4; margin-bottom: 10px; flex: 1; }
+    .post-card p { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px; }
+    .post-meta { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+    .post-meta-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--border); }
+    footer { background: var(--green-dark); color: rgba(255,255,255,0.5); padding: 32px 0; text-align: center; font-size: 13px; }
+    footer a { color: rgba(255,255,255,0.6); }
+    @media (max-width: 768px) { .posts-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 1024px) { .posts-grid { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <div class="navbar-inner">
+      <a class="navbar-logo" href="/">🚲 Aktivní Rodinka</a>
+      <a class="btn btn-primary" href="/#rezervace">Rezervovat vozík</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <h1>Blog pro aktivní rodiče</h1>
+    <p>Tipy na výlety, průvodci produkty a rady jak sportovat s dětmi — ať jste kdekoliv.</p>
+  </div>
+</section>
+
+<section class="posts">
+  <div class="container">
+    <div class="posts-grid">
+
+      <a class="post-card" href="/blog/thule-chariot-sport-nejlepsi-detsky-vozik">
+        <div class="post-card-body">
+          <div class="post-tag">🚲 Průvodce produktem</div>
+          <h2>Thule Chariot Sport: Proč je nejlepší dětský vozík pro aktivní rodiny</h2>
+          <p>Kompletní průvodce — výhody, parametry, pro koho se hodí a proč se vyplatí půjčit místo koupit.</p>
+          <div class="post-meta">
+            <span>1. dubna 2025</span>
+            <div class="post-meta-dot"></div>
+            <span>8 min čtení</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Další články budou přibývat -->
+
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>© 2025 Aktivní Rodinka, Zlín · <a href="/">Hlavní stránka</a> · <a href="mailto:ahoj@aktivnirodinka.cz">ahoj@aktivnirodinka.cz</a></p>
+  </div>
+</footer>
+
+</body>
+</html>

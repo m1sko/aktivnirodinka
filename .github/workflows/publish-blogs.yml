@@ -1,0 +1,96 @@
+name: Automatické publikování blogů
+
+on:
+  schedule:
+    # Každý 1. a 15. v mesiaci o 8:00 ráno (UTC+1 = 9:00 CZ)
+    - cron: '0 7 1 * *'
+    - cron: '0 7 15 * *'
+  workflow_dispatch: # Umožní spustit ručně z GitHub UI
+
+jobs:
+  publish-scheduled-posts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repozitáře
+        uses: actions/checkout@v4
+
+      - name: Nastavení Git identity
+        run: |
+          git config user.name "Aktivní Rodinka Bot"
+          git config user.email "ahoj@aktivnirodinka.cz"
+
+      - name: Zkontrolovat a publikovat drafty
+        run: |
+          TODAY=$(date +%Y-%m-%d)
+          echo "Dnešní datum: $TODAY"
+
+          # Pokud existuje složka drafts, zkontroluj jestli je čas publikovat
+          if [ -d "blog/drafts" ]; then
+            for file in blog/drafts/*.html; do
+              [ -f "$file" ] || continue
+              # Přečíst datum publikování z HTML komentáře <!-- publish: YYYY-MM-DD -->
+              PUBLISH_DATE=$(grep -o '<!-- publish: [0-9-]* -->' "$file" | grep -o '[0-9-]*' || echo "")
+              if [ -n "$PUBLISH_DATE" ] && [ "$PUBLISH_DATE" <= "$TODAY" ]; then
+                FILENAME=$(basename "$file")
+                echo "Publikuji: $FILENAME (datum: $PUBLISH_DATE)"
+                cp "$file" "blog/$FILENAME"
+                git add "blog/$FILENAME"
+                echo "✅ Publikováno: $FILENAME"
+              fi
+            done
+          fi
+
+      - name: Aktualizovat sitemap
+        run: |
+          python3 - <<'EOF'
+          import os
+          from datetime import date
+
+          base_url = "https://www.aktivnirodinka.cz"
+          today = date.today().isoformat()
+
+          urls = [
+              {"loc": f"{base_url}/", "priority": "1.0", "changefreq": "monthly"},
+              {"loc": f"{base_url}/pujcovna-zlin", "priority": "0.9", "changefreq": "monthly"},
+              {"loc": f"{base_url}/blog", "priority": "0.8", "changefreq": "weekly"},
+          ]
+
+          # Přidat všechny blogové články
+          blog_dir = "blog"
+          if os.path.exists(blog_dir):
+              for f in sorted(os.listdir(blog_dir)):
+                  if f.endswith(".html") and f != "index.html":
+                      slug = f.replace(".html", "")
+                      urls.append({
+                          "loc": f"{base_url}/blog/{slug}",
+                          "priority": "0.7",
+                          "changefreq": "yearly"
+                      })
+
+          xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+          xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+          for u in urls:
+              xml += f'  <url>\n'
+              xml += f'    <loc>{u["loc"]}</loc>\n'
+              xml += f'    <lastmod>{today}</lastmod>\n'
+              xml += f'    <changefreq>{u["changefreq"]}</changefreq>\n'
+              xml += f'    <priority>{u["priority"]}</priority>\n'
+              xml += f'  </url>\n'
+          xml += '</urlset>\n'
+
+          with open("sitemap.xml", "w") as f:
+              f.write(xml)
+          print("✅ Sitemap aktualizována")
+          EOF
+
+      - name: Commit a push zmien
+        run: |
+          git add sitemap.xml blog/ 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "Žiadne zmeny na publikovanie."
+          else
+            git commit -m "auto: publikování blogů $(date +%Y-%m-%d)"
+            git push
+            echo "✅ Zmeny pushnuté"
+          fi
