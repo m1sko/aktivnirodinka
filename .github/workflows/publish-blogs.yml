@@ -31,7 +31,7 @@ jobs:
               [ -f "$file" ] || continue
               # Přečíst datum publikování z HTML komentáře <!-- publish: YYYY-MM-DD -->
               PUBLISH_DATE=$(grep -o '<!-- publish: [0-9-]* -->' "$file" | grep -o '[0-9-]*' || echo "")
-              if [ -n "$PUBLISH_DATE" ] && [ "$PUBLISH_DATE" <= "$TODAY" ]; then
+              if [ -n "$PUBLISH_DATE" ] && [[ "$PUBLISH_DATE" <= "$TODAY" ]]; then
                 FILENAME=$(basename "$file")
                 echo "Publikuji: $FILENAME (datum: $PUBLISH_DATE)"
                 cp "$file" "blog/$FILENAME"
