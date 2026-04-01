@@ -50,13 +50,26 @@ jobs:
           base_url = "https://www.aktivnirodinka.cz"
           today = date.today().isoformat()
 
+          # Homepage vždy prvá
           urls = [
               {"loc": f"{base_url}/", "priority": "1.0", "changefreq": "monthly"},
-              {"loc": f"{base_url}/pujcovna-zlin", "priority": "0.9", "changefreq": "monthly"},
-              {"loc": f"{base_url}/blog", "priority": "0.8", "changefreq": "weekly"},
           ]
 
-          # Přidat všechny blogové články
+          # Auto-discover root HTML stránky (okrem index.html a 404.html)
+          skip_root = {"index.html", "404.html"}
+          for f in sorted(os.listdir(".")):
+              if f.endswith(".html") and f not in skip_root:
+                  slug = f.replace(".html", "")
+                  urls.append({
+                      "loc": f"{base_url}/{slug}",
+                      "priority": "0.9",
+                      "changefreq": "monthly"
+                  })
+
+          # Blog index
+          urls.append({"loc": f"{base_url}/blog", "priority": "0.8", "changefreq": "weekly"})
+
+          # Auto-discover blogové články (bez drafts)
           blog_dir = "blog"
           if os.path.exists(blog_dir):
               for f in sorted(os.listdir(blog_dir)):
