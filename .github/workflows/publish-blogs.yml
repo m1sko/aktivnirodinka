@@ -5,7 +5,7 @@ on:
     # Každý 1. a 15. v mesiaci o 8:00 ráno (UTC+1 = 9:00 CZ)
     - cron: '0 7 1 * *'
     - cron: '0 7 15 * *'
-  workflow_dispatch: # Umožní spustit ručně z GitHub UI
+  workflow_dispatch:
 
 jobs:
   publish-scheduled-posts:
@@ -20,66 +20,55 @@ jobs:
           git config user.name "Aktivní Rodinka Bot"
           git config user.email "ahoj@aktivnirodinka.cz"
 
-      - name: Zkontrolovat a publikovat drafty
-        run: |
-          TODAY=$(date +%Y-%m-%d)
-          echo "Dnešní datum: $TODAY"
-
-          # Pokud existuje složka drafts, zkontroluj jestli je čas publikovat
-          if [ -d "blog/drafts" ]; then
-            for file in blog/drafts/*.html; do
-              [ -f "$file" ] || continue
-              # Přečíst datum publikování z HTML komentáře <!-- publish: YYYY-MM-DD -->
-              PUBLISH_DATE=$(grep -o '<!-- publish: [0-9-]* -->' "$file" | grep -o '[0-9-]*' || echo "")
-              if [ -n "$PUBLISH_DATE" ] && [[ "$PUBLISH_DATE" <= "$TODAY" ]]; then
-                FILENAME=$(basename "$file")
-                echo "Publikuji: $FILENAME (datum: $PUBLISH_DATE)"
-                cp "$file" "blog/$FILENAME"
-                git add "blog/$FILENAME"
-                echo "✅ Publikováno: $FILENAME"
-              fi
-            done
-          fi
-
-      - name: Aktualizovat sitemap
+      - name: Zkontrolovat a publikovat drafty + aktualizovat sitemap
         run: |
           python3 - <<'EOF'
           import os
+          import re
+          import shutil
           from datetime import date
 
-          base_url = "https://www.aktivnirodinka.cz"
           today = date.today().isoformat()
+          print(f"Dnešní datum: {today}")
 
-          # Homepage vždy prvá
+          # Publikovanie drafts
+          drafts_dir = "blog/drafts"
+          if os.path.exists(drafts_dir):
+              for filename in os.listdir(drafts_dir):
+                  if not filename.endswith(".html"):
+                      continue
+                  filepath = os.path.join(drafts_dir, filename)
+                  with open(filepath, "r") as f:
+                      content = f.read()
+                  match = re.search(r'<!-- publish: (\d{4}-\d{2}-\d{2}) -->', content)
+                  if match:
+                      publish_date = match.group(1)
+                      if publish_date <= today:
+                          dest = os.path.join("blog", filename)
+                          shutil.copy(filepath, dest)
+                          print(f"✅ Publikováno: {filename} (datum: {publish_date})")
+
+          # Generovanie sitemap
+          base_url = "https://www.aktivnirodinka.cz"
+
           urls = [
               {"loc": f"{base_url}/", "priority": "1.0", "changefreq": "monthly"},
           ]
 
-          # Auto-discover root HTML stránky (okrem index.html a 404.html)
           skip_root = {"index.html", "404.html"}
           for f in sorted(os.listdir(".")):
               if f.endswith(".html") and f not in skip_root:
                   slug = f.replace(".html", "")
-                  urls.append({
-                      "loc": f"{base_url}/{slug}",
-                      "priority": "0.9",
-                      "changefreq": "monthly"
-                  })
+                  urls.append({"loc": f"{base_url}/{slug}", "priority": "0.9", "changefreq": "monthly"})
 
-          # Blog index
           urls.append({"loc": f"{base_url}/blog", "priority": "0.8", "changefreq": "weekly"})
 
-          # Auto-discover blogové články (bez drafts)
           blog_dir = "blog"
           if os.path.exists(blog_dir):
               for f in sorted(os.listdir(blog_dir)):
                   if f.endswith(".html") and f != "index.html":
                       slug = f.replace(".html", "")
-                      urls.append({
-                          "loc": f"{base_url}/blog/{slug}",
-                          "priority": "0.7",
-                          "changefreq": "yearly"
-                      })
+                      urls.append({"loc": f"{base_url}/blog/{slug}", "priority": "0.7", "changefreq": "yearly"})
 
           xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
           xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
