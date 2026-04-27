@@ -1499,6 +1499,7 @@
 </a>
 
 <script>
+  // Mobile nav
   const hamburger = document.getElementById('hamburger');
   const mobileNav = document.getElementById('mobileNav');
   if (hamburger && mobileNav) {
@@ -1513,6 +1514,129 @@
       });
     });
   }
+
+  // Price calculator
+  (function () {
+    const dFrom = document.getElementById('datum_vydeje');
+    const dTo = document.getElementById('datum_vraceni');
+    const box = document.getElementById('priceCalc');
+    const main = document.getElementById('priceMain');
+    const breakdown = document.getElementById('priceBreakdown');
+    const hidden = document.getElementById('priceHidden');
+    if (!dFrom || !dTo || !box || !main || !breakdown || !hidden) return;
+
+    function formatKc(n) {
+      return n.toLocaleString('cs-CZ').replace(/\u00A0/g, ' ') + ' Kč';
+    }
+
+    function calc(from, to) {
+      // Parse as local dates (avoid timezone shifts)
+      const a = new Date(from + 'T00:00:00');
+      const b = new Date(to + 'T00:00:00');
+      if (isNaN(a) || isNaN(b)) return null;
+      const days = Math.round((b - a) / 86400000) + 1; // inclusive
+      if (days < 1) return null;
+
+      // Friday–Sunday weekend = 650 Kč
+      // getDay(): 0 Ne, 5 Pi, 6 So
+      if (days === 3 && a.getDay() === 5 && b.getDay() === 0) {
+        return { total: 650, days, label: 'Víkend (Pá–Ne)', perDay: null };
+      }
+      if (days === 1) {
+        return { total: 390, days, label: '1 den', perDay: 390 };
+      }
+      if (days >= 2 && days <= 6) {
+        return { total: days * 350, days, label: days + ' dny × 350 Kč', perDay: 350 };
+      }
+      if (days === 7) {
+        return { total: 1400, days, label: 'Týden (7 dní)', perDay: 200 };
+      }
+      // 8+ days: týden + 350/den za zbytek
+      const extra = days - 7;
+      return {
+        total: 1400 + extra * 350,
+        days,
+        label: 'Týden + ' + extra + ' den' + (extra === 1 ? '' : (extra >= 2 && extra <= 4 ? 'y' : 'ů')),
+        perDay: null
+      };
+    }
+
+    function update() {
+      const from = dFrom.value;
+      const to = dTo.value;
+      if (!from || !to) {
+        box.classList.remove('visible');
+        hidden.value = '';
+        return;
+      }
+      const r = calc(from, to);
+      if (!r) {
+        box.classList.remove('visible');
+        hidden.value = '';
+        return;
+      }
+      main.textContent = formatKc(r.total);
+      breakdown.textContent = r.label + ' · ' + r.days + (r.days === 1 ? ' den' : (r.days >= 2 && r.days <= 4 ? ' dny' : ' dní'));
+      hidden.value = r.total + ' Kč (' + r.days + ' dní)';
+      box.classList.add('visible');
+    }
+
+    dFrom.addEventListener('change', update);
+    dTo.addEventListener('change', update);
+    dFrom.addEventListener('input', update);
+    dTo.addEventListener('input', update);
+
+    // Auto-set vrácení = výdej + 1 if empty
+    dFrom.addEventListener('change', () => {
+      if (dFrom.value && !dTo.value) {
+        const a = new Date(dFrom.value + 'T00:00:00');
+        a.setDate(a.getDate() + 1);
+        dTo.value = a.toISOString().slice(0, 10);
+        update();
+      }
+    });
+
+    // Set min date = today
+    const today = new Date().toISOString().slice(0, 10);
+    dFrom.setAttribute('min', today);
+    dTo.setAttribute('min', today);
+
+    update();
+  })();
+
+  // AJAX form submit (so success message shows instead of Formspree redirect)
+  (function () {
+    const form = document.getElementById('reservationForm');
+    const success = document.getElementById('formSuccess');
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = form.querySelector('button[type="submit"]');
+      const originalText = btn ? btn.innerHTML : '';
+      if (btn) { btn.disabled = true; btn.innerHTML = 'Odesílám…'; }
+
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { 'Accept': 'application/json' }
+        });
+        if (res.ok) {
+          form.style.display = 'none';
+          if (success) {
+            success.classList.add('visible');
+            success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        } else {
+          throw new Error('Formspree returned ' + res.status);
+        }
+      } catch (err) {
+        alert('Omlouváme se, odeslání se nezdařilo. Napište nám prosím přímo na ahoj@aktivnirodinka.cz nebo WhatsApp +420 739 769 736.');
+        if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+      }
+    });
+  })();
 </script>
 
 </body>
