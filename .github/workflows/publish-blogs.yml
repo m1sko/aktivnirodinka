@@ -2,10 +2,12 @@ name: Automatické publikování blogů
 
 on:
   schedule:
-    # Každý 1. a 15. v mesiaci o 8:00 ráno (UTC+1 = 9:00 CZ)
-    - cron: '0 7 1 * *'
-    - cron: '0 7 15 * *'
+    # Každý den v 7:00 UTC (9:00 CZ v létě, 8:00 v zimě)
+    - cron: '0 7 * * *'
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   publish-scheduled-posts:
@@ -33,20 +35,28 @@ jobs:
 
           # Publikovanie drafts
           drafts_dir = "blog/drafts"
+          published_count = 0
           if os.path.exists(drafts_dir):
-              for filename in os.listdir(drafts_dir):
+              for filename in sorted(os.listdir(drafts_dir)):
                   if not filename.endswith(".html"):
                       continue
                   filepath = os.path.join(drafts_dir, filename)
-                  with open(filepath, "r") as f:
+                  with open(filepath, "r", encoding="utf-8") as f:
                       content = f.read()
-                  match = re.search(r'<!-- publish: (\d{4}-\d{2}-\d{2}) -->', content)
-                  if match:
-                      publish_date = match.group(1)
-                      if publish_date <= today:
-                          dest = os.path.join("blog", filename)
-                          shutil.copy(filepath, dest)
-                          print(f"✅ Publikováno: {filename} (datum: {publish_date})")
+                  match = re.search(r'<!--\s*publish:\s*(\d{4}-\d{2}-\d{2})\s*-->', content)
+                  if not match:
+                      print(f"⚠️  {filename}: chybí <!-- publish: YYYY-MM-DD --> tag, přeskakuji")
+                      continue
+                  publish_date = match.group(1)
+                  if publish_date > today:
+                      print(f"⏳ {filename}: naplánováno na {publish_date}, ještě ne")
+                      continue
+                  dest = os.path.join("blog", filename)
+                  shutil.copy(filepath, dest)
+                  os.remove(filepath)
+                  published_count += 1
+                  print(f"✅ Publikováno: {filename} (datum: {publish_date}) — draft odstraněn")
+          print(f"Celkem publikováno: {published_count}")
 
           # Generovanie sitemap
           base_url = "https://www.aktivnirodinka.cz"
@@ -81,14 +91,14 @@ jobs:
               xml += f'  </url>\n'
           xml += '</urlset>\n'
 
-          with open("sitemap.xml", "w") as f:
+          with open("sitemap.xml", "w", encoding="utf-8") as f:
               f.write(xml)
           print("✅ Sitemap aktualizována")
           EOF
 
       - name: Commit a push zmien
         run: |
-          git add sitemap.xml blog/ 2>/dev/null || true
+          git add -A blog/ sitemap.xml
           if git diff --cached --quiet; then
             echo "Žiadne zmeny na publikovanie."
           else
